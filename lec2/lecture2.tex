@@ -3,14 +3,59 @@
 \usepackage{graphicx}
 \usepackage{fontspec}
 \usepackage{xcolor}
-\usepackage[vmargin=3cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
 \begin{document}
 \title{Lecture Notes 2}
 \author{}
 \date{\today}
 \maketitle
 \section{第二章\ 贝尔曼公式}
-数学直观：return为什么是重要的？
+\textcolor{blue}{\kaishu*数学直观：return为什么是重要的？}
 
 \textbf{return}可以用来量化并评估某个policy是否是“好的”
+
+v为状态值，r为当前状态的reward，P为与状态空间有关的矩阵，表明不同状态之间的关系
+
+\textbf{状态值}：state value，是在采用某策略的条件下，某个状态出发得到的return的数学期望
+\[
+v_{\pi}(s) = \mathbb{E}[G_t | S_t = s]
+\]
+\textcolor{blue}{\kaishu*状态值和return的区别：return是根据某一条trajectory得到的确定的值，而状态值是一个符合概率分布的随机变量}
+
+\textbf{贝尔曼公式的一般形式}：
+$$v_{\pi}(s) = \mathbb{E}[G_t | S_t = s]$$
+数学推导过程：
+\begin{align*}
+v_{\pi}(s) &= \mathbb{E}[G_t | S_t = s] \\
+&= \mathbb{E}[R_{t+1} + \gamma G_{t+1} | S_t = s] \\
+&= \textcolor{blue}{\mathbb{E}[R_{t+1} | S_t = s]} + \gamma \textcolor{blue}{\mathbb{E}[G_{t+1} | S_t = s]}
+\end{align*}
+\begin{align*}
+\textcolor{blue}{\mathbb{E}[R_{t+1} | S_t = s]} &= \sum_{a} \pi(a|s) \mathbb{E}[R_{t+1} | S_t = s, A_t = a] \\
+&= \sum_{a} \pi(a|s) \sum_{r} p(r|s, a)r
+\end{align*}
+\begin{align*}
+\textcolor{blue}{\mathbb{E}[G_{t+1} | S_t = s]} &= \sum_{s'} \mathbb{E}[G_{t+1} | S_t = s, S_{t+1} = s'] p(s'|s) \\
+&= \sum_{s'} \mathbb{E}[G_{t+1} | S_{t+1} = s'] p(s'|s) \\
+&= \sum_{s'} v_{\pi}(s') p(s'|s) \\
+&= \sum_{s'} v_{\pi}(s') \sum_{a} p(s'|s, a) \pi(a|s)
+\end{align*}
+\textbf{总结}：
+\begin{align*}
+\textcolor{red}{v_{\pi}(s)} &= \mathbb{E}[R_{t+1} | S_t = s] + \gamma \mathbb{E}[G_{t+1} | S_t = s], \\
+&= \underbrace{\textcolor{blue}{\sum_{a} \pi(a|s) \sum_{r} p(r|s, a)r}}_{\text{mean of immediate rewards}} + \underbrace{\textcolor{blue}{\gamma \sum_{a} \pi(a|s) \sum_{s'} p(s'|s, a) \textcolor{red}{v_{\pi}(s')}}}_{\text{mean of future rewards}}, \\
+&= \textcolor{blue}{\sum_{a} \pi(a|s) \left[ \sum_{r} p(r|s, a)r + \gamma \sum_{s'} p(s'|s, a) \textcolor{red}{v_{\pi}(s')} \right]}, \quad \forall s \in \mathcal{S}.
+\end{align*}
+
+贝尔曼公式用于计算某个状态的状态值。描述了不同状态的状态值之间的关系
+
+\textcolor{blue}{\kaishu*贝尔曼公式对状态空间的所有状态都适用}
+
+\textcolor{blue}{\kaishu*通过求解状态值，可以用来评估policy（即公式中的$\pi$}）
+
+\textcolor{blue}{\kaishu*公式中的$p(r|s, a)$和$p(s'|s, a)$代表dynamic model（或environment model）}
+
+\textcolor{blue}{\kaishu*通过对比不同策略下同一个状态的状态值，就可以知道相对而言策略的好坏}
+
 \end{document}
