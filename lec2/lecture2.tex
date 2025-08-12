@@ -11,6 +11,7 @@
 \date{\today}
 \maketitle
 \section{第二章\ 贝尔曼公式}
+\subsection{状态值及其定义}
 \textcolor{blue}{\kaishu*数学直观：return为什么是重要的？}
 
 \textbf{return}可以用来量化并评估某个policy是否是“好的”
@@ -22,10 +23,10 @@ v为状态值，r为当前状态的reward，P为与状态空间有关的矩阵�
 v_{\pi}(s) = \mathbb{E}[G_t | S_t = s]
 \]
 \textcolor{blue}{\kaishu*状态值和return的区别：return是根据某一条trajectory得到的确定的值，而状态值是一个符合概率分布的随机变量}
-
+\subsection{贝尔曼公式的数学推导过程}
 \textbf{贝尔曼公式的一般形式}：
 $$v_{\pi}(s) = \mathbb{E}[G_t | S_t = s]$$
-数学推导过程：
+
 \begin{align*}
 v_{\pi}(s) &= \mathbb{E}[G_t | S_t = s] \\
 &= \mathbb{E}[R_{t+1} + \gamma G_{t+1} | S_t = s] \\
@@ -57,5 +58,42 @@ v_{\pi}(s) &= \mathbb{E}[G_t | S_t = s] \\
 \textcolor{blue}{\kaishu*公式中的$p(r|s, a)$和$p(s'|s, a)$代表dynamic model（或environment model）}
 
 \textcolor{blue}{\kaishu*通过对比不同策略下同一个状态的状态值，就可以知道相对而言策略的好坏}
-
+\subsection{贝尔曼公式的矩阵-向量形式}
+以大小为4的状态空间为例：
+\[
+\underbrace{
+  \begin{bmatrix}
+    v_{\pi}(s_1) \\
+    v_{\pi}(s_2) \\
+    v_{\pi}(s_3) \\
+    v_{\pi}(s_4)
+  \end{bmatrix}
+}_{v_{\pi}}
+=
+\underbrace{
+  \begin{bmatrix}
+    r_{\pi}(s_1) \\
+    r_{\pi}(s_2) \\
+    r_{\pi}(s_3) \\
+    r_{\pi}(s_4)
+  \end{bmatrix}
+}_{r_{\pi}}
++ \gamma
+\underbrace{
+  \begin{bmatrix}
+    p_{\pi}(s_1|s_1) & p_{\pi}(s_2|s_1) & p_{\pi}(s_3|s_1) & p_{\pi}(s_4|s_1) \\
+    p_{\pi}(s_1|s_2) & p_{\pi}(s_2|s_2) & p_{\pi}(s_3|s_2) & p_{\pi}(s_4|s_2) \\
+    p_{\pi}(s_1|s_3) & p_{\pi}(s_2|s_3) & p_{\pi}(s_3|s_3) & p_{\pi}(s_4|s_3) \\
+    p_{\pi}(s_1|s_4) & p_{\pi}(s_2|s_4) & p_{\pi}(s_3|s_4) & p_{\pi}(s_4|s_4)
+  \end{bmatrix}
+}_{P_{\pi}}
+\underbrace{
+  \begin{bmatrix}
+    v_{\pi}(s_1) \\
+    v_{\pi}(s_2) \\
+    v_{\pi}(s_3) \\
+    v_{\pi}(s_4)
+  \end{bmatrix}
+}_{v_{\pi}}.
+\]
 \end{document}
