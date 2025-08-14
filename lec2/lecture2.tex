@@ -124,6 +124,9 @@ $$v_k \to v_{\pi} = (I - \gamma P_{\pi})^{-1} r_{\pi}, \quad k \to \infty$$
 注意到 $0 \le P_{\pi}^k \le 1$，这意味着对于任意 $k=0, 1, 2, \dots$，$P_{\pi}^k$ 矩阵中的每一个元素都不大于1。这是因为 $P_{\pi}^k \mathbf{1} = \mathbf{1}$，其中 $\mathbf{1} = [1, \dots, 1]^T$ 是一个全为1的向量。另一方面，由于折扣因子 $\gamma < 1$，我们知道当 $k \to \infty$ 时，$\gamma^k \to 0$。因此，$\delta_{k+1} = \gamma^{k+1} P_{\pi}^{k+1} \delta_0 \to 0$。
 
 这就证明了 $v_k$ 会收敛到 $v_{\pi}$。 
-\subsection{行动值}
-action value的定义：$q_{\pi}(s, a) = \mathbb{E} \left[ G_t \mid S_t = s,\, A_t = a \right]$
+\subsection{行动值（action value）}
+定义：$q_{\pi}(s, a) = \mathbb{E} \left[ G_t \mid S_t = s,\, A_t = a \right]$
+
+与状态值的联系：$\textcolor{red}{v_{\pi}(s)} = \sum_{a} \pi(a \mid s) \, \textcolor{red}{q_{\pi}(s, a)}$
+根据状态值的计算推导出行动值：$\textcolor{red}{q_{\pi}(s, a)} = \sum_{r} p(r|s, a)r + \gamma \sum_{s'} p(s'|s, a) \textcolor{red}{v_{\pi}(s')}$
 \end{document}
