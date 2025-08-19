@@ -8,8 +8,53 @@
 \usepackage{bm}
 \usepackage{amsfonts} 
 \begin{document}
-\title{Lecture Notes 3}
+\title{Lecture Notes 5}
 \author{Minfei Chen}
 \date{\today}
 \maketitle
-\ecd{document}
+\section{Monte Carlo estimation}
+\textbf{蒙特卡洛}方法实际上是一种用采样的数据来估计模型的\textbf{model-free}的方法。
+\section{MC basic}
+算法的关键在于用model-free的方法来求解${q_{\pi_k}}$，即从采样中获得discounted return的估计。
+\begin{itemize}
+    \item 从一个状态-动作对 $(s, a)$ 出发，遵循策略 $\pi_k$，生成一条完整的经验片段 (episode)。
+    
+    \item 该经验片段从 $(s, a)$ 开始的总回报 (return) 为 $g(s, a)$。
+    
+    \item 这个计算出的 $g(s, a)$ 是真实期望总回报 $G_t$ 的一个样本 (sample)。
+\end{itemize}
+
+根据定义，动作价值函数 $q_{\pi_k}(s, a)$ 是期望总回报：
+\[
+q_{\pi_k}(s, a) = \mathbb{E}[G_t | S_t = s, A_t = a]
+\]
+
+\begin{itemize}
+    \item 假设我们通过多次试验，有了一系列经验片段，因此也就有了一组从 $(s, a)$ 出发的回报样本 $\{g^{(j)}(s, a)\}$。那么，我们可以通过求平均来近似计算Q函数：
+\end{itemize}
+\begin{align*}
+    q_{\pi_k}(s, a) &= \mathbb{E}[G_t | S_t = s, A_t = a] \\
+    &\approx \frac{1}{N} \sum_{i=1}^{N} g^{(i)}(s, a).
+\end{align*}
+\textcolor{blue}{\kaishu*在这个方法中，我们不计算policy iteration中的$v_{\pi_k}$,而是直接从样本估计出$q_{\pi_k}$。}
+\section{MC Exploring Starts}
+Visit：对于所有状态和行动的组合，执行一次叫做一个visit。
+
+\textbf{Initial-visit method}:
+
+把每一个episode视为只包含了第一个visit的信息（即MC Basic）实际上对episode的信息利用是不充分的。如果把后续的步数也看成是不同的episode，就可以比较充分地利用整个episode的信息。
+
+举一个例子：
+\begin{align*}
+    s_1 \xrightarrow{a_2} s_2 \xrightarrow{a_4} s_1 \xrightarrow{a_2} s_2 \xrightarrow{a_3} s_5 \xrightarrow{a_1} \dots \quad &\text{[原始经验片段 (original episode)]} \\
+    \\
+    s_2 \xrightarrow{a_4} s_1 \xrightarrow{a_2} s_2 \xrightarrow{a_3} s_5 \xrightarrow{a_1} \dots \quad &\text{[从 $(s_2, a_4)$ 开始的片段]} \\
+    s_1 \xrightarrow{a_2} s_2 \xrightarrow{a_3} s_5 \xrightarrow{a_1} \dots \quad &\text{[从 $(s_1, a_2)$ 开始的片段]} \\
+    s_2 \xrightarrow{a_3} s_5 \xrightarrow{a_1} \dots \quad &\text{[从 $(s_2, a_3)$ 开始的片段]} \\
+    s_5 \xrightarrow{a_1} \dots \quad &\text{[从 $(s_5, a_1)$ 开始的片段]}
+\end{align*}
+
+可以估计 (Can estimate) $q_{\pi}(s_1, a_2), q_{\pi}(s_2, a_4), q_{\pi}(s_2, a_3), q_{\pi}(s_5, a_1), \dots$
+
+\textcolor{blue}{\kaishu*包含first visit（只利用visit第一次出现时后续的信息）和every visit（不管出现多少次都利用后续的信息）两种方法}
+\end{document}
