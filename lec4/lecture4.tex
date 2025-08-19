@@ -13,4 +13,60 @@
 \date{\today}
 \maketitle
 \section{Value iteration}
+值迭代的算法包含两个步骤。
+\subsection{matrix-vector form}
+步骤1：policy update，即求解出${v_k}$所对应的策略${\pi_{k+1}}$
+$$
+\pi_{k+1} = \underset{\pi}{\arg\max} (r_{\pi} + \gamma P_{\pi} v_k)
+$$
+
+步骤2：value update，利用贝尔曼公式，根据上一步求解出来的${\pi_{k+1}}$来求解${v_{k+1}}$
+$$
+v_{k+1} = r_{\pi_{k+1}} + \gamma P_{\pi_{k+1}} v_k
+$$
+\subsection{elementwise form}
+step1:
+$$
+\pi_{k+1}(s) = \underset{\pi}{\arg\max} \sum_{a} \pi(a|s) \underbrace{\left( \sum_{r} p(r|s, a)r + \gamma \sum_{s'} p(s'|s, a)v_k(s') \right)}_{q_k(s,a)}, \quad s \in S
+$$
+通过代入$v_k(s')$可以得到$\pi_{k+1}(s)$,即把q-value最大的那一个action的p设为1，其他设为0.
+
+step2:
+$$
+v_{k+1}(s) = \sum_{a} \pi_{k+1}(a|s) \underbrace{\left( \sum_{r} p(r|s, a)r + \gamma \sum_{s'} p(s'|s, a)v_k(s') \right)}_{q_k(s,a)}, \quad s \in S
+$$
+\section{policy iteration}
+\subsection{matrix vector form}
+步骤1：policy evaluation策略评估，根据策略函数计算出满足该策略的价值函数
+
+$$
+v_{\pi_k} = r_{\pi_k} + \gamma P_{\pi_k} v_{\pi_k}
+$$
+
+\textcolor{blue}{\kaishu 在这一步中，$v_{\pi_k}$需要通过在贝尔曼公式中迭代的方法来求解。}
+
+步骤2：policy improvement策略改进，通过价值函数来计算此时的最优策略
+$$
+\pi_{k+1} = \underset{\pi}{\arg\max} (r_{\pi} + \gamma P_{\pi} v_{\pi_k})
+$$
+
+\textcolor{blue}{\kaishu 在得到最优的价值函数$v^*$之后，根据迭代出的价值函数来计算新的策略}
+\section{truncated policy iteration}
+考虑求解贝尔曼期望方程 $v_{\pi_1} = r_{\pi_1} + \gamma P_{\pi_1} v_{\pi_1}$ 这一步骤：
+
+\begin{align*}
+    % 初始值
+    v_{\pi_1}^{(0)} &= v_0 \\
+    % 价值迭代 (进行1次)
+    v_{\pi_1}^{(1)} &= r_{\pi_1} + \gamma P_{\pi_1} v_{\pi_1}^{(0)} && \leftarrow \text{价值迭代 (value iteration) 中评估仅进行一步} \\
+    % 迭代过程
+    v_{\pi_1}^{(2)} &= r_{\pi_1} + \gamma P_{\pi_1} v_{\pi_1}^{(1)} \\
+    &\vdots \\
+    % 截断的策略迭代 (进行j次)
+    v_{\pi_1}^{(j)} &= r_{\pi_1} + \gamma P_{\pi_1} v_{\pi_1}^{(j-1)} && \leftarrow \text{截断的策略迭代 (truncated policy iteration)} \\
+    &\vdots \\
+    % (标准的)策略迭代 (进行无限次直到收敛)
+    v_{\pi_1}^{(\infty)} &= r_{\pi_1} + \gamma P_{\pi_1} v_{\pi_1}^{(\infty)} && \leftarrow \text{(标准的)策略迭代 (policy iteration) 中评估至完全收敛}
+\end{align*}
+\textcolor{blue}{\kaishu*在实际当中迭代是不可能进行有限步的，所以policy iteration只是一个理论上的方法。实际上在计算$v_{\pi_1}$时使用的都是截断的迭代方法。}
 \end{document}
