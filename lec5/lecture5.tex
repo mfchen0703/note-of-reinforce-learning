@@ -77,7 +77,7 @@ Visit：对于所有状态和行动的组合，执行一次叫做一个visit。
 \[
 \pi_{k+1}(s) = \underset{\pi \in \Pi_{\varepsilon}}{\arg\max} \sum_{a} \pi(a|s) q_{\pi_k}(s, a)
 \]
-其中 $\Pi_{\varepsilon}$ 表示所有 ε-贪心策略的集合（具有一个固定的 ε 值）。
+其中 $\Pi_{\varepsilon}$ 表示所有 $\epsilon$-贪心策略的集合（具有一个固定的$\epsilon$值）。
 
 在这个约束下，提升后的最优策略 $\pi_{k+1}$ 具有如下形式：
 \[
