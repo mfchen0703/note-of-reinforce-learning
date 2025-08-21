@@ -57,4 +57,39 @@ Visit：对于所有状态和行动的组合，执行一次叫做一个visit。
 可以估计 (Can estimate) $q_{\pi}(s_1, a_2), q_{\pi}(s_2, a_4), q_{\pi}(s_2, a_3), q_{\pi}(s_5, a_1), \dots$
 
 \textcolor{blue}{\kaishu*包含first visit（只利用visit第一次出现时后续的信息）和every visit（不管出现多少次都利用后续的信息）两种方法}
+
+\textbf{Exploring}的含义：确保每一个$(s,a)$都能被访问到。
+
+\textbf{starts}的含义：确保episode是从$(s,a)$开始的
+\section{MC $\epsilon$-greedy}
+\subsubsection*{什么是 $\epsilon$-贪心策略？}
+一个 $\epsilon$-贪心策略 $\pi$ 在给定状态 $s$ 下，选择动作 $a$ 的概率定义如下：
+\[
+\pi(a|s) =
+\begin{cases}
+  1 - \varepsilon + \frac{\varepsilon}{|A(s)|} & \text{对于贪心动作 (greedy action)} \\
+  \frac{\varepsilon}{|A(s)|} & \text{对于其他 } |A(s)| - 1 \text{ 个非贪心动作}
+\end{cases}
+\]
+
+\subsubsection*{如何将 $\epsilon$-贪心策略嵌入到 MC 算法中？}
+现在，策略提升步骤被修改为求解以下问题：
+\[
+\pi_{k+1}(s) = \underset{\pi \in \Pi_{\varepsilon}}{\arg\max} \sum_{a} \pi(a|s) q_{\pi_k}(s, a)
+\]
+其中 $\Pi_{\varepsilon}$ 表示所有 ε-贪心策略的集合（具有一个固定的 ε 值）。
+
+在这个约束下，提升后的最优策略 $\pi_{k+1}$ 具有如下形式：
+\[
+\pi_{k+1}(a|s) =
+\begin{cases}
+  1 - \varepsilon + \frac{\varepsilon}{|A(s)|} & \text{如果 } a = a_k^* \\
+  \frac{\varepsilon}{|A(s)|} & \text{如果 } a \neq a_k^*
+\end{cases}
+\]
+这里的 $a_k^*$ 是指在当前价值评估 $q_{\pi_k}$ 下的贪心动作，即 $a_k^*(s) = \underset{a}{\arg\max} \, q_{\pi_k}(s, a)$。
+
+\textbf{和MC exploring starts的区别：探索性，不需要从所有$(s,a)$出发，也能确保遍历到比较多的特定的$(s,a)$}
+
+\textcolor{blue}{\kaishu*在MC $\epsilon$-greedy中，使用every visit方法来利用数据}
 \end{document}

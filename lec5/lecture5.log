@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.7.20)  19 AUG 2025 14:58
+This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.7.20)  21 AUG 2025 15:33
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -558,19 +558,29 @@ Package fontspec Info:
 
 ]
 
-[2] (./lecture5.aux)
+[2]
+Missing character: There is no ε (U+03B5) in font [lmroman10-regular]:mapping=tex-text;!
+Missing character: There is no ε (U+03B5) in font [lmroman10-regular]:mapping=tex-text;!
+
+Overfull \hbox (13.84732pt too wide) in paragraph at lines 89--91
+\TU/SongtiSCLight(0)/m/n/10.53937 这 里 的 $\OML/cmm/m/it/10.53937 a[]$ \TU/SongtiSCLight(0)/m/n/10.53937 是 指 在 当 前 价 值 评 估 $\OML/cmm/m/it/10.53937 q[]$ \TU/SongtiSCLight(0)/m/n/10.53937 下 的 贪 心 动 作，|  即 $\OML/cmm/m/it/10.53937 a[]\OT1/cmr/m/n/10.53937 (\OML/cmm/m/it/10.53937 s\OT1/cmr/m/n/10.53937 ) = [] \OML/cmm/m/it/10.53937 q[]\OT1/cmr/m/n/10.53937 (\OML/cmm/m/it/10.53937 s; a\OT1/cmr/m/n/10.53937 )$\TU/SongtiSCLight(0)/m/n/10.53937 。| 
+ []
+
+
+
+[3] (./lecture5.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2022/07/14>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 8255 strings out of 468457
- 218162 string characters out of 5445913
- 635722 words of memory out of 5000000
- 36559 multiletter control sequences out of 15000+600000
- 641712 words of font info for 120 fonts, out of 8000000 for 9000
+ 8328 strings out of 468457
+ 222053 string characters out of 5445913
+ 639722 words of memory out of 5000000
+ 36625 multiletter control sequences out of 15000+600000
+ 646651 words of font info for 139 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  93i,18n,114p,409b,288s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on lecture5.pdf (2 pages).
+Output written on lecture5.pdf (3 pages).
