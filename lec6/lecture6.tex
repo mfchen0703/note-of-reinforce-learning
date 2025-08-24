@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage[UTF8]{ctex}
+\usepackage{graphicx}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{amsfonts} 
+\begin{document}
+\title{Lecture Notes 6}
+\author{Minfei Chen}
+\date{\today}
+\maketitle
+\section{Robins Monro Algorithm}
+RM算法是Stochastic Approximation领域的工作。
+
+SGD随机梯度下降是RM算法的特殊形式。
+
+Robbins-Monro (RM) 算法可以解决以下问题：
+\[
+w_{k+1} = w_k - a_k \tilde{g}(w_k, \eta_k), \quad k = 1, 2, 3, \dots
+\]
+其中：
+\begin{itemize}
+    \item $w_k$ 是对“根”(root) 的第 $k$ 次估计值。
+    \item $\tilde{g}(w_k, \eta_k) = g(w_k) + \eta_k$ 是第 $k$ 次带噪声的观测值 (noisy observation)。
+    \item $a_k$ 是一个正系数（通常称为步长或学习率）。
+\end{itemize}
+\subsection{收敛性分析}
+Robbins--Monro (RM) 定理说明在以下随机迭代过程中：
+\[
+w_{k+1} = w_k - a_k \big(g(w_k) + \eta_k\big), \quad k = 1, 2, 3, \dots
+\]
+如果满足一定条件，则 $w_k$ 收敛到满足 $g(w^*) = 0$ 的解 $w^*$。
+
+其中：
+\begin{itemize}
+    \item $w_k$ 是第 $k$ 次迭代得到的估计值。
+    \item $a_k$ 是正的步长序列（学习率），需满足
+    \[
+        \sum_{k=1}^\infty a_k = \infty, \quad \sum_{k=1}^\infty a_k^2 < \infty。
+    \]
+    \item $\eta_k$ 是随机噪声，满足
+    \[
+        \mathbb{E}[\eta_k \mid \mathcal{H}_k] = 0, 
+        \quad \mathbb{E}[\eta_k^2 \mid \mathcal{H}_k] < \infty,
+    \]
+    其中 $\mathcal{H}_k = \{w_k, w_{k-1}, \dots\}$ 表示历史信息。
+    \item 假设存在常数 $0 < c_1 \leq c_2$，使得
+    \[
+        c_1 \leq \nabla_w g(w) \leq c_2 \quad \text{对所有 } w \text{成立}。
+    \]
+\end{itemize}
+
+在上述条件下，迭代序列 $\{w_k\}$ 将以概率 $1$ 收敛到满足
+\[
+g(w^*) = 0
+\]
+的解 $w^*$。
+\end{document}
