@@ -58,4 +58,109 @@ w_{k+1} = w_k - a_k \big(g(w_k) + \eta_k\big), \quad k = 1, 2, 3, \dots
 g(w^*) = 0
 \]
 的解 $w^*$。
+\section{随机梯度下降（stochastic gradient decent，SGD）}
+\subsection{SGD的概念和公式}
+随机梯度下降是梯度下降的其中一种方法，而使用梯度下降的目的是求出目标函数的最小值$w^*$
+随机梯度下降的公式：
+$$
+w_{k+1} = w_k - \alpha_k \nabla_w f(w_k, x_k)
+$$
+与梯度下降（GD）与批量梯度下降（BGD）的区别：不计算期望（即梯度的真实值），而是只使用了\textbf{一个采样}
+
+\textcolor{blue}{\kaishu*实际上批量梯度下降也只是用采样来估计梯度}
+\subsection{收敛性分析}
+思路：证明SGD是解决一个特殊问题（梯度 = 0）的RM算法。
+\subsubsection*{第一步：将 SGD 的最小化问题转化为寻根问题}
+
+SGD 的目标是最小化目标函数 $J(w)$，即在所有数据 $X$ 上的期望损失：
+\[
+J(w) = \mathbb{E}[f(w, X)]
+\]
+这个最小化问题可以被转化为一个寻根问题。根据微积分原理，函数在最小值点，其梯度为零。因此，我们需要找到 $w$ 使得：
+\[
+\nabla_w J(w) = \mathbb{E}[\nabla_w f(w, X)] = 0
+\]
+现在，我们令：
+\[
+g(w) = \nabla_w J(w) = \mathbb{E}[\nabla_w f(w, X)].
+\]
+于是，SGD 的目标就变成了：寻找函数 $g(w)=0$ 的根。
+
+\subsubsection*{第二步：使用 RM 算法求解该寻根问题}
+
+无法计算真实的梯度 $g(w)$（因为它需要在所有数据上求期望），我们能测量到的只是在单个样本 $x$ 上的随机梯度：
+\[
+\tilde{g}(w, \eta) = \nabla_w f(w, x)
+\]
+将这个随机梯度分解为真实梯度和噪声项：
+\[
+\tilde{g}(w, \eta) = \underbrace{\mathbb{E}[\nabla_w f(w, X)]}_{g(w)} + \underbrace{\nabla_w f(w, x) - \mathbb{E}[\nabla_w f(w, X)]}_{\eta}.
+\]
+这里的噪声项 $\eta$ 的期望为零。
+
+使用 RM 算法来求解 $g(w)=0$：
+\[
+w_{k+1} = w_k - a_k \tilde{g}(w_k, \eta_k) = w_k - a_k \nabla_w f(w_k, x_k).
+\]
+这个结果正是 SGD 算法的更新规则。
+\subsubsection{梯度误差与实际误差}
+我们定义随机梯度的相对误差 $\delta_k$ 为：
+\[
+\delta_k := \frac{|\nabla_w f(w_k, x_k) - \mathbb{E}[\nabla_w f(w_k, X)]|}{|\mathbb{E}[\nabla_w f(w_k, X)]|}.
+\]
+
+由于在最优点 $w^*$ 处，我们有 $\mathbb{E}[\nabla_w f(w^*, X)] = 0$，可以进一步推得：
+\begin{align*}
+\delta_k &= \frac{|\nabla_w f(w_k, x_k) - \mathbb{E}[\nabla_w f(w_k, X)]|}{|\mathbb{E}[\nabla_w f(w_k, X)] - \mathbb{E}[\nabla_w f(w^*, X)]|} \\
+&= \frac{|\nabla_w f(w_k, x_k) - \mathbb{E}[\nabla_w f(w_k, X)]|}{|\mathbb{E}[\nabla_w^2 f(\tilde{w}_k, X)(w_k - w^*)]|}.
+\end{align*}
+其中最后一个等式是根据中值定理 (mean value theorem) 得到的，并且 $\tilde{w}_k \in [w_k, w^*]$。
+假设函数 $f$ 是\textbf{严格凸 (strictly convex)}的，满足：
+\[
+\nabla_w^2 f \ge c > 0
+\]
+对于所有的 $w, X$ 均成立，其中 $c$ 是一个正常数下界。
+
+那么，上一节中 $\delta_k$ 的分母可以进行如下放缩：
+\begin{align*}
+    \left|\mathbb{E}[\nabla_w^2 f(\tilde{w}_k, X)(w_k - w^*)]\right| &= \left|\mathbb{E}[\nabla_w^2 f(\tilde{w}_k, X)](w_k - w^*)\right| \\
+    &= \left|\mathbb{E}[\nabla_w^2 f(\tilde{w}_k, X)]\right| \cdot |w_k - w^*| \\
+    &\ge c|w_k - w^*|.
+\end{align*}
+
+将上述不等式代入 $\delta_k$ 的定义，可得其上界：
+\[
+\delta_k \le \frac{|\nabla_w f(w_k, x_k) - \mathbb{E}[\nabla_w f(w_k, X)]|}{c|w_k - w^*|}
+\]
+
+由此可得，当$w_k$与$W^*$距离较远的时候，随机梯度是接近于真实梯度（期望）的。\textbf{此时SGD就近似于GD。}此时梯度下降的方向大致会朝着正确的方向。
+
+而当$w_k$与$W^*$距离较近的时候，随机梯度的随机性则会有所提高。此时梯度下降的方向也会比较随机。
+\subsection{BGD, MBGD and SGD}
+假设我们想要最小化目标函数 $J(w) = \mathbb{E}[f(w, X)]$，并且给定了一组来自 $X$ 的随机样本 $\{x_i\}_{i=1}^n$。用于解决该问题的 BGD、SGD 和 MBGD 算法分别如下：
+
+\begin{itemize}
+    \item \textbf{批量梯度下降 (Batch Gradient Descent, BGD):}
+    \[
+    w_{k+1} = w_k - \alpha_k \frac{1}{n} \sum_{i=1}^{n} \nabla_w f(w_k, x_i)
+    \]
+    
+    \item \textbf{小批量梯度下降 (Mini-Batch Gradient Descent, MBGD):}
+    \[
+    w_{k+1} = w_k - \alpha_k \frac{1}{m} \sum_{j \in \mathcal{I}_k} \nabla_w f(w_k, x_j)
+    \]
+    
+    \item \textbf{随机梯度下降 (Stochastic Gradient Descent, SGD):}
+    \[
+    w_{k+1} = w_k - \alpha_k \nabla_w f(w_k, x_k)
+    \]
+\end{itemize}
+
+如果批量大小 $m = 1$，那么小批量梯度下降 (MBGD) 就变成了随机梯度下降 (SGD)。
+    
+如果批量大小 $m = n$（即等于总样本数），严格来说，MBGD \textbf{并不会}变成批量梯度下降 (BGD)。
+    
+这是因为 MBGD 的定义是使用随机抽取的 $n$ 个样本，而 BGD 使用的是固定的全部 $n$ 个样本。特别地，MBGD 可能会在一次更新中多次使用数据集 $\{x_i\}_{i=1}^n$ 里的同一个样本（即有放回采样），而 BGD 在一次更新中对每个样本只使用一次。
+    
+
 \end{document}
