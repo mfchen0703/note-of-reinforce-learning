@@ -1,0 +1,214 @@
+\documentclass{article}
+\usepackage[UTF8]{ctex}
+\usepackage{graphicx}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{amsfonts} 
+\usepackage{tabularx}
+\usepackage{booktabs}
+\begin{document}
+\title{Lecture Notes 7}
+\author{Minfei Chen}
+\date{\today}
+\maketitle
+\section{TD Algorithm}
+TD 学习算法的更新规则如下：
+\begin{align*}
+    v_{t+1}(s_t) &= v_t(s_t) - \alpha_t(s_t) \left[ v_t(s_t) - [r_{t+1} + \gamma v_t(s_{t+1})] \right] \\
+    v_{t+1}(s) &= v_t(s), \quad \forall s \neq s_t
+\end{align*}
+其中 $t = 0, 1, 2, \dots$。这里的 $v_t(s_t)$ 是对真实价值 $v_{\pi}(s_t)$ 的估计值；$\alpha_t(s_t)$ 是在时间 $t$ 时状态 $s_t$ 的学习率。
+
+\subsubsection*{TD 更新规则分析}
+
+TD 更新规则：
+\[
+\underbrace{v_{t+1}(s_t)}_{\text{新估计值}} = \underbrace{v_t(s_t)}_{\text{当前估计值}} - \alpha_t(s_t) \underbrace{\left[ v_t(s_t) - \overbrace{[r_{t+1} + \gamma v_t(s_{t+1})]}^{\text{TD 目标 } \bar{v}_t} \right]}_{\text{TD 误差}}
+\]
+ \textbf{TD 目标 (TD target)} 定义为：
+\[
+\bar{v}_t \doteq r_{t+1} + \gamma v_t(s_{t+1})
+\]
+“目标”的含义是，当前的估计值 $v_t(s_t)$ 会被“拉向”TD 目标 $\bar{v}_t$。
+
+将 TD 目标代入更新规则：
+\begin{align*}
+    v_{t+1}(s_t) &= v_t(s_t) - \alpha_t(s_t) [v_t(s_t) - \bar{v}_t] \\
+    % 两边同时减去 TD 目标
+    \implies v_{t+1}(s_t) - \bar{v}_t &= v_t(s_t) - \bar{v}_t - \alpha_t(s_t) [v_t(s_t) - \bar{v}_t] \\
+    % 合并同类项
+    \implies v_{t+1}(s_t) - \bar{v}_t &= [1 - \alpha_t(s_t)][v_t(s_t) - \bar{v}_t] \\
+    % 两边取绝对值
+    \implies |v_{t+1}(s_t) - \bar{v}_t| &= |1 - \alpha_t(s_t)| |v_t(s_t) - \bar{v}_t|
+\end{align*}
+由于学习率 $\alpha_t(s_t)$ 是一个小的正数，我们有：
+\[
+0 < 1 - \alpha_t(s_t) < 1
+\]
+因此，我们可以得到：
+\[
+|v_{t+1}(s_t) - \bar{v}_t| \le |v_t(s_t) - \bar{v}_t|
+\]
+这证明了新的估计值 $v_{t+1}(s_t)$ 确实被拉向了 TD 目标 $\bar{v}_t$！
+
+\textbf{TD 误差} $\delta_t$ 定义为：
+\[
+\delta_t = v(s_t) - [r_{t+1} + \gamma v(s_{t+1})]
+\]
+
+\begin{itemize}
+    \item 它是两个连续时间步之间估计值的差异。即在 $t$ 时刻的估计 $v(s_t)$ 与在 $t+1$ 时刻得到的一个更可靠的目标值 $[r_{t+1} + \gamma v(s_{t+1})]$ 之间的差异。
+    
+    \item 它反映了当前估计值 $v_t$ 与真实价值 $v_{\pi}$ 之间的**“不足”或“缺陷” (deficiency)**。为了理解这一点，我们定义一个理论上的“贝尔曼误差”：
+    \[
+    \delta_{\pi,t} \doteq v_{\pi}(s_t) - [r_{t+1} + \gamma v_{\pi}(s_{t+1})]
+    \]
+    注意到，这个贝尔曼误差的期望值为零：
+    \begin{align*}
+        \mathbb{E}[\delta_{\pi,t} | S_t = s_t] &= v_{\pi}(s_t) - \mathbb{E}[R_{t+1} + \gamma v_{\pi}(S_{t+1}) | S_t = s_t] \\
+        &= 0.
+    \end{align*}
+    
+    \item 因此，如果估计值是完美的，即 $v_t = v_{\pi}$，那么我们计算出的 TD 误差 $\delta_t$ 的期望值也应该为零。
+\end{itemize}
+
+\begin{table}[htbp] % h: here, t: top, b: bottom, p: page of floats
+    \centering
+    \caption{TD 学习与 MC 学习的对比}
+    \label{tab:td_vs_mc_full}
+    \begin{tabularx}{\textwidth}{XX} % 使用两个X列，使它们宽度相等且自动换行
+        \toprule
+        \textbf{TD/Sarsa 学习} & \textbf{蒙特卡洛 (MC) 学习} \\
+        \midrule
+        \textbf{在线学习 (Online):} TD 学习是在线的。它可以在收到一个奖励后，立即更新状态或动作的价值。 & \textbf{离线学习 (Offline):} MC 学习是离线的。它必须等到一条经验片段 (episode) 被完整收集后，才能进行更新。 \\
+        
+        \addlinespace % 增加行间距
+        
+        \textbf{持续性任务 (Continuing tasks):} 由于 TD 学习是在线的，它可以处理有终点的分幕式任务，也可以处理没有终点的持续性任务。 & \textbf{分幕式任务 (Episodic tasks):} 由于 MC 学习是离线的，它只能处理那些有终止状态的分幕式任务。 \\
+        
+        \addlinespace
+        
+        \textbf{自举 (Bootstrapping):} TD 学习是自举的，因为其价值的更新依赖于之前的价值估计值。因此，它需要一个初始猜测值来启动。 & \textbf{非自举 (Non-bootstrapping):} MC 学习不是自举的，因为它可以直接估计状态/动作的价值而无需任何初始猜测值（它直接计算真实的回报）。 \\
+        
+        \addlinespace
+        
+        \textbf{低估计方差 (Low estimation variance):} TD 的方差比 MC 低，因为它只涉及较少的随机变量。例如，Sarsa 的更新只依赖于下一步的随机结果 $R_{t+1}, S_{t+1}, A_{t+1}$。 & \textbf{高估计方差 (High estimation variance):} 为了估计 $q_\pi(s_t, a_t)$，我们需要对一个很长的随机序列 $R_{t+1} + \gamma R_{t+2} + \dots$ 进行采样。路径中的任何一步随机性都会累积，导致回报值的波动很大。 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+\section{Sarsa Algorithm}
+\[
+q_{t+1}(s, a) =
+\begin{cases}
+    q_t(s_t, a_t) - \alpha_t(s_t, a_t) \left[ q_t(s_t, a_t) - [r_{t+1} + \gamma q_t(s_{t+1}, a_{t+1})] \right], & \text{if } (s,a) = (s_t, a_t) \\
+    q_t(s, a), & \forall (s, a) \neq (s_t, a_t)
+\end{cases}
+\]
+其中 $t=0, 1, 2, \dots$
+\begin{itemize}
+    \item $q_t(s_t, a_t)$ 是对真实动作价值 $q_{\pi}(s_t, a_t)$ 的一个估计；
+    \item $\alpha_t(s_t, a_t)$ 是与状态-动作对 $(s_t, a_t)$ 相关的学习率。
+\end{itemize}
+
+\subsubsection*{第一步：更新 Q 值 (Update q-value)}
+根据采集到的经验五元组 $(s_t, a_t, r_{t+1}, s_{t+1}, a_{t+1})$，进行一次 Sarsa 更新：
+\[
+q_{t+1}(s_t, a_t) = q_t(s_t, a_t) - \alpha_t(s_t, a_t) \left[ q_t(s_t, a_t) - [r_{t+1} + \gamma q_t(s_{t+1}, a_{t+1})] \right]
+\]
+
+\subsubsection*{第二步：更新策略 (Update policy)}
+基于刚刚更新得到的 Q 值，改进状态 $s_t$ 下的策略 $\pi$ （使用$\epsilon$-greedy）：
+\[
+\pi_{t+1}(a|s_t) =
+\begin{cases}
+    1 - \varepsilon + \frac{\varepsilon}{|A(s_t)|} & \text{如果 } a = \underset{a'}{\arg\max} \, q_{t+1}(s_t, a') \\
+    \frac{\varepsilon}{|A(s_t)|} & \text{对于其他动作}
+\end{cases}
+\]
+\section{expected Sarsa and n-step Sarsa}
+\subsection{expected Sarsa}
+expected Sarsa对 TD target 进行了改进：
+\begin{align*}
+    q_{t+1}(s_t, a_t) &= q_t(s_t, a_t) - \alpha_t(s_t, a_t) \left[ q_t(s_t, a_t) - (r_{t+1} + \gamma \mathbb{E}[q_t(s_{t+1}, A)]) \right], \\
+    q_{t+1}(s, a) &= q_t(s, a), \quad \forall (s, a) \neq (s_t, a_t),
+\end{align*}
+其中，
+\[
+\mathbb{E}[q_t(s_{t+1}, A)] = \sum_{a} \pi_t(a|s_{t+1}) q_t(s_{t+1}, a) \doteq v_t(s_{t+1})
+\]
+这个期望值是 $q_t(s_{t+1}, a)$ 在当前策略 $\pi_t$ 下的期望。
+
+\textcolor{blue}{\kaishu*Expected Sarsa通过计算某种策略下行动A的期望，从而减少了随机变量的个数，降低了算法的随机性，提高了收敛的速度}
+\subsection{n-step Sarsa : unifying Sarsa and MC}
+不同算法实际上是在使用不同“步数”的回报 (Return) 作为更新目标：
+\begin{align*}
+    \text{Sarsa (单步)} \quad & G_t^{(1)} = R_{t+1} + \gamma q_{\pi}(S_{t+1}, A_{t+1}), \\
+    \quad & G_t^{(2)} = R_{t+1} + \gamma R_{t+2} + \gamma^2 q_{\pi}(S_{t+2}, A_{t+2}), \\
+    &\vdots \\
+    \text{n-步 Sarsa} \quad & G_t^{(n)} = R_{t+1} + \gamma R_{t+2} + \dots + \gamma^n q_{\pi}(S_{t+n}, A_{t+n}), \\
+    &\vdots \\
+    \text{蒙特卡洛 (MC)} \quad & G_t^{(\infty)} = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \dots
+\end{align*}
+\textcolor{blue}{\kaishu*n-step Sarsa 是一种特殊的online的方法}
+\section{Q-learning}
+Q-learning 算法的更新规则如下：
+\[
+q_{t+1}(s, a) =
+\begin{cases}
+    q_t(s_t, a_t) - \alpha_t(s_t, a_t) \left[ q_t(s_t, a_t) - [r_{t+1} + \gamma \max_{a \in A} q_t(s_{t+1}, a)] \right], & \text{if } (s,a) = (s_t, a_t) \\
+    q_t(s, a), & \forall (s, a) \neq (s_t, a_t)
+\end{cases}
+\]
+
+Q-learning解决的是一个贝尔曼最优方程：
+$$
+q(s, a) = \mathbb{E} \left[ R_{t+1} + \gamma \max_{a'} q(S_{t+1}, a') \, \middle| \, S_t = s, A_t = a \right], \quad \forall s, a.
+$$
+\subsection*{on-policy 与 off-policy}
+behavior policy：用于与环境交互，得到experience的policy
+
+target policy：不断更新，以得到最优的策略
+
+on-policy：两个策略相同，即在与环境交互的过程中改进策略
+
+off-policy：两个策略不用，即使用一个策略与环境交互得到exp，这些exp用来改进另一个策略
+\begin{itemize}
+    \item MC是一种on-policy的方法
+    \item Sarsa是一种on-policy的方法
+    \item Q-learning是一种off-policy的方法
+\end{itemize}
+\subsection{Q-learning的两种形式}
+\subsection*{on-policy}
+\textbf{1. 更新 Q 值 (Update q-value):}
+\[
+q_{t+1}(s_t, a_t) = q_t(s_t, a_t) - \alpha_t(s_t, a_t) \left[ q_t(s_t, a_t) - [r_{t+1} + \gamma \max_{a} q_t(s_{t+1}, a)] \right]
+\]
+
+\textbf{2. 更新 (行为) 策略 (Update policy):}
+\[
+\pi_{t+1}(a|s_t) =
+\begin{cases}
+    1 - \varepsilon + \frac{\varepsilon}{|A(s_t)|} & \text{如果 } a = \underset{a'}{\arg\max} \, q_{t+1}(s_t, a') \\
+    \frac{\varepsilon}{|A(s_t)|} & \text{对于其他动作}
+\end{cases}
+\]
+\subsection*{off-policy}
+\textbf{1. 更新 Q 值 (Update q-value):}
+\[
+q_{t+1}(s_t, a_t) = q_t(s_t, a_t) - \alpha_t(s_t, a_t) \left[ q_t(s_t, a_t) - [r_{t+1} + \gamma \max_{a} q_t(s_{t+1}, a)] \right]
+\]
+
+\textbf{2. 更新目标策略 (Update target policy):}
+\[
+\pi_{T, t+1}(a|s_t) =
+\begin{cases}
+    1 & \text{如果 } a = \underset{a'}{\arg\max} \, q_{t+1}(s_t, a') \\
+    0 & \text{对于其他动作}
+\end{cases}
+\]
+\textcolor{blue}{\kaishu*on-policy的方法是$\epsilon$-greedy的，因为它需要用来生成exp，有一定的探索性；而off-policy的策略是greedy的，因为它不需要用来生成exp，但是需要是最优的}
+
+\end{document}
