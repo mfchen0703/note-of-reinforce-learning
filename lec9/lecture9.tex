@@ -1,0 +1,203 @@
+\documentclass{article}
+\usepackage[UTF8]{ctex}
+\usepackage{graphicx}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{amsfonts} 
+\usepackage{tabularx}
+\usepackage{booktabs}
+\begin{document}
+\title{Lecture Notes 9}
+\author{Minfei Chen}
+\date{\today}
+\maketitle
+\section{basic ideas}
+\begin{itemize}
+    \item \textbf{第一步：定义指标。} 我们需要一个指标（或目标函数）来定义最优策略，记作 $J(\theta)$。
+    
+    \item \textbf{第二步：梯度优化。} 使用基于梯度的优化算法来搜索最优策略：
+    \[
+    \theta_{t+1} = \theta_t + \alpha \nabla_{\theta} J(\theta_t)
+    \]
+\end{itemize}
+\section{metrics to define optimal policies}
+\subsection{metric1: average state value（average value）}
+average state value $\bar{v}_{\pi}$ 定义为：
+\[
+\bar{v}_{\pi} = \sum_{s \in S} d(s) v_{\pi}(s)
+\]
+
+\begin{itemize}
+    \item $\bar{v}_{\pi}$ 是所有状态价值的一个加权平均 (weighted average)。
+    
+    \item $d(s) \ge 0$ 是状态 $s$ 的权重 (weight)。
+    
+    \item 由于 $\sum_{s \in S} d(s) = 1$，我们可以将 $d(s)$ 解释为一个概率分布。那么，这个指标可以写作期望的形式：
+    \[
+    \bar{v}_{\pi} = \mathbb{E}[v_{\pi}(S)]
+    \]
+    其中，状态 $S$ 是从分布 $d$ 中采样的，记作 $S \sim d$。
+\end{itemize}
+向量化表示：
+\[
+\bar{v}_{\pi} = \sum_{s \in S} d(s) v_{\pi}(s) = d^T v_{\pi}
+\]
+其中
+\begin{align*}
+    v_{\pi} &= [ \dots, v_{\pi}(s), \dots ]^T \in \mathbb{R}^{|S|} \\
+    d &= [ \dots, d(s), \dots ]^T \in \mathbb{R}^{|S|}.
+\end{align*}
+\subsubsection{distribution $d$}
+一种情况是$d$与策略$\pi$无关，此时可以选择平均分布或者选取一个最重要的状态$s_0$，令$d(s_0)$ = 1，此时$\bar{v}_{\pi} = v(s_0)$
+
+另一种情况是$d$与策略$\pi$有关，此时的分布为stationary distribution。
+\subsection{metric2: average one-step reward（one-step reward）}
+average one-step reward
+\[
+\bar{r}_{\pi} \doteq \sum_{s \in S} d_{\pi}(s) r_{\pi}(s) = \mathbb{E}[r_{\pi}(S)],
+\]
+其中 $S \sim d_{\pi}$。这里，
+\[
+r_{\pi}(s) \doteq \sum_{a \in A} \pi(a|s) r(s, a)
+\]
+是从状态 $s$ 出发能够获得的单步即时奖励的平均值，并且
+\[
+r(s, a) = \mathbb{E}[R|s, a] = \sum_{r} r \cdot p(r|s, a)
+\]
+
+\begin{itemize}
+    \item 权重 $d_{\pi}$ 是平稳分布 (stationary distribution)。
+    \item 顾名思义，$\bar{r}_{\pi}$ 就是单步即时奖励的一个加权平均值。
+\end{itemize}
+另一个等价的定义：
+\begin{itemize}
+    \item 假设一个智能体遵循给定策略，并生成一条奖励轨迹 (trajectory)，其奖励序列为 $(R_{t+1}, R_{t+2}, \dots)$。
+    
+    \item 沿着这条轨迹的平均单步奖励 (average single-step reward) 是：
+\end{itemize}
+\begin{align*}
+    &\lim_{n \to \infty} \frac{1}{n} \mathbb{E}\left[R_{t+1} + R_{t+2} + \dots + R_{t+n} \middle| S_t=s_0\right] \\
+    ={}& \lim_{n \to \infty} \frac{1}{n} \mathbb{E}\left[\sum_{k=1}^{n} R_{t+k} \middle| S_t=s_0\right]
+\end{align*}
+其中 $s_0$ 是轨迹的起始状态。
+
+一个重要的性质是：
+\begin{align*}
+    &\lim_{n \to \infty} \frac{1}{n} \mathbb{E}\left[\sum_{k=1}^{n} R_{t+k} \middle| S_t=s_0\right] = \lim_{n \to \infty} \frac{1}{n} \mathbb{E}\left[\sum_{k=1}^{n} R_{t+k}\right] \\
+    ={}& \sum_{s} d_{\pi}(s) r_{\pi}(s) \\
+    ={}& \bar{r}_{\pi}
+\end{align*}
+
+即average reward与起始状态无关。
+\subsection{remarks of the metrics}
+\subsubsection*{1. 目标函数的本质}
+\begin{itemize}
+    \item 我们讨论的所有指标（metrics）都是策略 $\pi$ 的函数。
+    \item 由于策略 $\pi$ 是由参数 $\theta$ 参数化的（记作 $\pi_{\theta}$），所以这些指标也都是参数 $\theta$ 的函数。
+    \item 换句话说，不同的 $\theta$ 值会产生不同的指标值。
+    \item 因此，我们可以通过寻找最优的 $\theta$ 值来最大化这些指标。
+\end{itemize}
+
+\subsubsection*{2. 平均奖励 vs. 平均价值}
+\begin{itemize}
+    \item 直观上，$\bar{r}_{\pi}$ (平均奖励) 更加“短视”，因为它仅仅考虑了即时奖励；而 $\bar{v}_{\pi}$ (平均价值) 则考虑了所有步骤的未来总回报，所以更加“有远见”。
+    \item 然而，这两个指标是等价的。在折扣因子 $\gamma < 1$ 的情况下，它们满足以下关系：
+    \[
+    \bar{r}_{\pi} = (1 - \gamma)\bar{v}_{\pi}.
+    \]
+\end{itemize}
+
+\subsubsection*{3. 一个等价的 $v_{\pi}$ 定义（常用的 J($\theta$) 定义）}
+在文献中，经常看到下面这个指标：
+\[
+J(\theta) = \mathbb{E}\left[\sum_{t=0}^{\infty} \gamma^t R_{t+1}\right]
+\]
+（该形式可通过全期望公式推导）
+\section{metrics的梯度}
+策略梯度定理给出的结果如下：
+\[
+\nabla_{\theta} J(\theta) = \sum_{s \in S} \eta(s) \sum_{a \in A} \nabla_{\theta} \pi(a|s, \theta) q_{\pi}(s, a)
+\]
+其中
+\begin{itemize}
+    \item $J(\theta)$ 可以是我们之前讨论的策略表现指标，如 $\bar{v}_{\pi}$, $\bar{r}_{\pi}$, 或 $v_{\pi}(s_0)$。
+    \item “$=$” 符号可以表示严格相等、近似或成正比关系。
+    \item $\eta$ 是一个状态的分布或权重（例如，平稳分布 $d_{\pi}$）。
+\end{itemize}
+\subsection*{一个紧凑且有用的梯度形式}
+
+\begin{align*}
+    \nabla_{\theta} J(\theta) &= \sum_{s \in S} \eta(s) \sum_{a \in A} \nabla_{\theta} \pi(a|s, \theta) q_{\pi}(s, a) \\
+    &= \mathbb{E}[\nabla_{\theta} \ln \pi(A|S, \theta) q_{\pi}(S, A)]
+\end{align*}
+其中状态 $S$ 从分布 $\eta$ 中采样 ($S \sim \eta$)，动作 $A$ 从策略 $\pi(A|S, \theta)$ 中采样 ($A \sim \pi(A|S, \theta)$)。
+
+通过将梯度转化成期望的形式，我们就能够使用采样来近似代替期望，这也体现了随机梯度的思想。
+
+推导过程如下：
+\begin{align*}
+    \nabla_{\theta} J &= \sum_s d(s) \sum_a \nabla_{\theta} \pi(a|s, \theta) q_{\pi}(s, a) \\
+    &= \sum_s d(s) \sum_a \pi(a|s, \theta) \nabla_{\theta} \ln \pi(a|s, \theta) q_{\pi}(s, a) \\
+    &= \mathbb{E}_{S \sim d} \left[ \sum_a \pi(a|S, \theta) \nabla_{\theta} \ln \pi(a|S, \theta) q_{\pi}(S, a) \right] \\
+    &= \mathbb{E}_{S \sim d, A \sim \pi} \left[ \nabla_{\theta} \ln \pi(A|S, \theta) q_{\pi}(S, A) \right] \\
+    &\doteq \mathbb{E} \left[ \nabla_{\theta} \ln \pi(A|S, \theta) q_{\pi}(S, A) \right]
+\end{align*}
+\section{梯度上升的MC算法：REINFORCE}
+\begin{itemize}
+    \item 用于最大化 $J(\theta)$ 的梯度上升算法是：
+    \begin{align*}
+        \theta_{t+1} &= \theta_t + \alpha \nabla_{\theta} J(\theta) \\
+        &= \theta_t + \alpha \mathbb{E}[\nabla_{\theta} \ln \pi(A|S, \theta_t) q_{\pi}(S, A)]
+    \end{align*}
+    
+    \item 这个“真实梯度”可以被一个“随机梯度”所替代：
+    \[
+    \theta_{t+1} = \theta_t + \alpha \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t) q_{\pi}(s_t, a_t)
+    \]
+    
+    \item 进一步地，由于真实的 $q_{\pi}$ 是未知的，它也需要被近似：
+    \[
+    \theta_{t+1} = \theta_t + \alpha \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t) q_t(s_t, a_t)
+    \]
+    
+    \item 我们可以用不同的方法来近似 $q_{\pi}(s_t, a_t)$。
+\end{itemize}
+使用Monte Carlo的思路，将
+\[
+\theta_{t+1} = \theta_t + \alpha \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t) q_{\pi}(s_t, a_t)
+\]
+替换为
+\[
+\theta_{t+1} = \theta_t + \alpha \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t) q_t(s_t, a_t)
+\]
+其中 $q_t(s_t, a_t)$ 是 $q_{\pi}(s_t, a_t)$ 的一个近似。
+
+\subsubsection*{remark：How to interpret this Algorithm?}
+
+这是一个用于最大化 $\pi(a_t|s_t, \theta)$ 的梯度上升算法：
+\[
+\theta_{t+1} = \theta_t + \alpha \beta_t \nabla_{\theta} \pi(a_t|s_t, \theta_t)
+\]
+
+\subsubsection*{直观解释 (Intuition)}
+当步长 $\alpha \beta_t$ 足够小时：
+\begin{itemize}
+    \item 如果 $\beta_t > 0$，那么选择动作-状态对 $(s_t, a_t)$ 的概率会被增强：
+    \[
+    \pi(a_t|s_t, \theta_{t+1}) > \pi(a_t|s_t, \theta_t)
+    \]
+    $\beta_t$ 的值越大，这种增强效果就越强。
+    \item 如果 $\beta_t < 0$，那么 $\pi(a_t|s_t, \theta_{t+1}) < \pi(a_t|s_t, \theta_t)$。
+\end{itemize}
+
+\subsubsection*{数学证明 (Math)}
+当参数更新量 $\theta_{t+1} - \theta_t$ 足够小时，我们可以使用泰勒一阶展开来近似 $\pi(a_t|s_t, \theta_{t+1})$：
+\begin{align*}
+    \pi(a_t|s_t, \theta_{t+1}) &\approx \pi(a_t|s_t, \theta_t) + (\nabla_{\theta} \pi(a_t|s_t, \theta_t))^T (\theta_{t+1} - \theta_t) \\
+    &= \pi(a_t|s_t, \theta_t) + \alpha \beta_t (\nabla_{\theta} \pi(a_t|s_t, \theta_t))^T (\nabla_{\theta} \pi(a_t|s_t, \theta_t)) \\
+    &= \pi(a_t|s_t, \theta_t) + \alpha \beta_t \|\nabla_{\theta} \pi(a_t|s_t, \theta_t)\|^2
+\end{align*}
+\end{document}
