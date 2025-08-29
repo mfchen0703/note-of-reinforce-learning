@@ -1,0 +1,254 @@
+\documentclass{article}
+\usepackage[UTF8]{ctex}
+\usepackage{graphicx}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{amsfonts} 
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{amsthm}
+\usepackage{framed}
+\begin{document}
+\title{Lecture Notes 10}
+\author{Minfei Chen}
+\date{\today}
+\maketitle
+\section{simplest Actor-Critic(QAC)}
+\subsubsection*{算法流程（类Sarsa）}
+在每个 episode 的时间步 $t$，执行以下操作：
+\begin{itemize}
+    \item 遵循当前策略 $\pi(a|s_t, \theta_t)$ 生成动作 $a_t$。
+    \item 观测到奖励 $r_{t+1}$ 和下一个状态 $s_{t+1}$。
+    \item 遵循当前策略 $\pi(a|s_{t+1}, \theta_t)$ 生成下一个动作 $a_{t+1}$。
+\end{itemize}
+
+\paragraph{评论家 (Critic) 更新价值：}
+\[
+w_{t+1} = w_t + \alpha_w [r_{t+1} + \gamma q(s_{t+1}, a_{t+1}, w_t) - q(s_t, a_t, w_t)] \nabla_w q(s_t, a_t, w_t)
+\]
+
+\paragraph{行动者 (Actor) 更新策略：}
+\[
+\theta_{t+1} = \theta_t + \alpha_{\theta} \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t) q(s_t, a_t, w_{t+1})
+\]
+
+\subsubsection*{*补充说明 (Remarks)}
+\begin{itemize}
+    \item 评论家 (Critic) 对应的是“带有价值函数近似的 SARSA 算法”。
+    \item 行动者 (Actor) 对应的是策略更新算法。
+    \item 该算法是同策略的 (on-policy)。
+    \item 由于策略本身是随机的，通常无需使用 $\epsilon$-greedy 等技巧。
+\end{itemize}
+\section{Advantage Actor-Critic(A2C)}
+\subsection*{核心思想：引入基线以降低方差}
+
+\subsubsection*{a. 基线不变性 (Baseline invariance)}
+
+\paragraph{性质} 策略梯度对于减去一个额外的基线是保持不变的：
+\begin{align*}
+    \nabla_{\theta} J(\theta) &= \mathbb{E}_{S \sim \eta, A \sim \pi} [\nabla_{\theta} \ln \pi(A|S, \theta_t) q_{\pi}(S, A)] \\
+    &= \mathbb{E}_{S \sim \eta, A \sim \pi} [\nabla_{\theta} \ln \pi(A|S, \theta_t) (q_{\pi}(S, A) - b(S))]
+\end{align*}
+这里的额外基线 $b(S)$ 是一个只与状态 $S$ 有关的标量函数。
+
+\paragraph{有效性证明} 基线项的期望值为零：
+\[
+\mathbb{E}_{S \sim \eta, A \sim \pi} [\nabla_{\theta} \ln \pi(A|S, \theta_t) b(S)] = 0
+\]
+详细证明如下 (The details)：
+\begin{align*}
+    \mathbb{E}_{S \sim \eta, A \sim \pi} [\nabla_{\theta} \ln \pi(A|S, \theta_t) b(S)] 
+    &= \sum_{s \in S} \eta(s) \sum_{a \in A} \pi(a|s, \theta_t) \nabla_{\theta} \ln \pi(a|s, \theta_t) b(s) \\
+    &= \sum_{s \in S} \eta(s) \sum_{a \in A} \nabla_{\theta} \pi(a|s, \theta_t) b(s) \\
+    &= \sum_{s \in S} \eta(s) b(s) \sum_{a \in A} \nabla_{\theta} \pi(a|s, \theta_t) \\
+    &= \sum_{s \in S} \eta(s) b(s) \nabla_{\theta} \sum_{a \in A} \pi(a|s, \theta_t) \\
+    &= \sum_{s \in S} \eta(s) b(s) \nabla_{\theta} (1) = 0
+\end{align*}
+\subsubsection*{b. 如何选择基线}
+策略梯度可以写作 $\nabla_{\theta} J(\theta) = \mathbb{E}[X]$，其中 $X$ 是梯度的随机估计量：
+\[
+X(S, A) \doteq \nabla_{\theta} \ln \pi(A|S, \theta_t) [q(S, A) - b(S)]
+\]
+$b(S)$ 有以下性质：
+\begin{itemize}
+    \item $\mathbb{E}[X]$ 的值与基线 $b(S)$ 无关（即梯度是无偏的）。
+    \item $\text{var}(X)$ (X的方差) 的值与基线 $b(S)$ 是相关的。
+\end{itemize}
+我们的目标是：选择一个最优的基线 $b$ 来最小化方差 $\text{var}(X)$。
+\begin{itemize}
+    \item 好处：当我们使用随机采样来近似期望 $\mathbb{E}[X]$ 时，如果 $X$ 本身的方差很小，那么我们的梯度估计就会更稳定。
+\end{itemize}
+
+对于任意状态 $s \in S$，能够最小化方差 $\text{var}(X)$ 的最优基线是：
+\[
+b^*(s) = \frac{\mathbb{E}_{A \sim \pi}\left[\|\nabla_{\theta} \ln \pi(A|s, \theta_t)\|^2 q(s, A)\right]}{\mathbb{E}_{A \sim \pi}\left[\|\nabla_{\theta} \ln \pi(A|s, \theta_t)\|^2\right]}.
+\]
+\begin{itemize}
+    \item 我们可以移除权重项 $\|\nabla_{\theta} \ln \pi(A|s, \theta_t)\|^2$，从而选择一个次优的基线：
+    \[
+    b(s) = \mathbb{E}_{A \sim \pi}[q(s, A)] = v_{\pi}(s)
+    \]
+\end{itemize}
+\subsubsection*{c. 优势函数 (Advantage Function)}
+通过引入基线 $v_{\pi}(S)$，策略梯度的期望形式可以写作：
+\begin{align*}
+    \theta_{t+1} &= \theta_t + \alpha \mathbb{E}[\nabla_{\theta} \ln \pi(A|S, \theta_t)[q_{\pi}(S, A) - v_{\pi}(S)]] \\
+    &\doteq \theta_t + \alpha \mathbb{E}[\nabla_{\theta} \ln \pi(A|S, \theta_t)\delta_{\pi}(S, A)]
+\end{align*}
+其中，
+\[
+\delta_{\pi}(S, A) \doteq q_{\pi}(S, A) - v_{\pi}(S)
+\]
+被称为\textbf{优势函数 (advantage function)}。
+
+\begin{itemize}
+    \item 该算法的随机版本是：
+    \begin{align*}
+        \theta_{t+1} &= \theta_t + \alpha \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t)[q_t(s_t, a_t) - v_t(s_t)] \\
+        &= \theta_t + \alpha \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t)\delta_t(s_t, a_t)
+    \end{align*}
+\end{itemize}
+
+此外，该算法可以被重新表达为：
+\begin{align*}
+    \theta_{t+1} &= \theta_t + \alpha \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t)\delta_t(s_t, a_t) \\
+    &= \theta_t + \alpha \frac{\nabla_{\theta} \pi(a_t|s_t, \theta_t)}{\pi(a_t|s_t, \theta_t)} \delta_t(s_t, a_t) \\
+    &= \theta_t + \alpha \underbrace{\left( \frac{\delta_t(s_t, a_t)}{\pi(a_t|s_t, \theta_t)} \right)}_{\text{步长 (step size)}} \nabla_{\theta} \pi(a_t|s_t, \theta_t)
+\end{align*}
+
+\subsubsection*{用 TD 误差来近似优势函数}
+更进一步地，优势函数可以通过 TD 误差来近似：
+\[
+\delta_t = q_t(s_t, a_t) - v_t(s_t) \to r_{t+1} + \gamma v_t(s_{t+1}) - v_t(s_t)
+\]
+\begin{itemize}
+    \item 这个近似是合理的，因为：
+    \[
+    \mathbb{E}[q_{\pi}(S, A) - v_{\pi}(S)|S = s_t, A = a_t] = \mathbb{E}[R+\gamma v_{\pi}(S')-v_{\pi}(S)|S = s_t, A = a_t]
+    \]
+    \item \textbf{好处}: 我们只需要一个神经网络来近似状态价值 $v_{\pi}(s)$，而不需要用两个网络分别近似 $q_{\pi}(s, a)$ 和 $v_{\pi}(s)$。
+\end{itemize}
+\section{重要性采样（importance sampling）}
+目的：我们想估计某个分布（$p_0$）下的期望，但我们只能从另一个分布（$p_1$）中采样。重要性采样提供了一种方法来调整这些样本，以便我们可以使用它们来估计目标分布的期望。
+
+注意到：
+\[
+\mathbb{E}_{X \sim p_0}[X] = \sum_x p_0(x) x = \sum_x p_1(x) \underbrace{\frac{p_0(x)}{p_1(x)} x}_{f(x)} = \mathbb{E}_{X \sim p_1}[f(X)]
+\]
+
+\begin{itemize}
+    \item 因此，我们可以通过估计 $\mathbb{E}_{X \sim p_1}[f(X)]$ 来估计 $\mathbb{E}_{X \sim p_0}[X]$。
+    \item 如何估计 $\mathbb{E}_{X \sim p_1}[f(X)]$？很简单。令
+    \[
+    \bar{f} = \frac{1}{n} \sum_{i=1}^{n} f(x_i), \quad \text{其中 } x_i \sim p_1
+    \]
+\end{itemize}
+
+因此，$\bar{f}$ 是 $\mathbb{E}_{X \sim p_1}[f(X)] = \mathbb{E}_{X \sim p_0}[X]$ 的一个良好近似：
+\[
+\mathbb{E}_{X \sim p_0}[X] \approx \bar{f} = \frac{1}{n} \sum_{i=1}^{n} f(x_i) = \frac{1}{n} \sum_{i=1}^{n} \frac{p_0(x_i)}{p_1(x_i)} x_i
+\]
+
+\begin{itemize}
+    \item $\frac{p_0(x_i)}{p_1(x_i)}$ 被称为\textbf{重要性权重 (importance weight)}。
+    \item 如果 $p_1(x_i) = p_0(x_i)$，那么重要性权重就是 1，$\bar{f}$ 就变成了普通的样本均值 $\bar{x}$。
+    \item 如果 $p_0(x_i) \ge p_1(x_i)$，说明样本 $x_i$ 在 $p_0$ 分布下出现的频率比在 $p_1$ 分布下更高。大于 1 的重要性权重可以增强这个样本的重要性。
+\end{itemize}
+
+\section{off-policy policy gradient}
+\subsection{theorem}
+
+在折扣因子 $\gamma \in (0, 1)$ 的情况下，目标函数 $J(\theta)$ 的梯度是：
+\[
+\nabla_{\theta} J(\theta) = \mathbb{E}_{S \sim \rho, A \sim \beta} \left[ \frac{\pi(A|S, \theta)}{\beta(A|S)} \nabla_{\theta} \ln \pi(A|S, \theta) q_{\pi}(S, A) \right]
+\]
+其中 $\beta$ 是行为策略 (behavior policy)，$\rho$ 是一个状态分布。
+
+
+与同策略 (on-policy) 的两个区别：
+\begin{itemize}
+    \item 动作 $A$ 从行为策略 $\beta$ 中采样 ($A \sim \beta$)，而不是从目标策略 $\pi$ 中采样 ($A \sim \pi$) 。
+    \item $\frac{\pi(A|S, \theta)}{\beta(A|S)}$ 是重要性权重 (importance weight)。
+\end{itemize}
+\subsection{Algorithm}
+
+对应的随机梯度上升算法是：
+\[
+\theta_{t+1} = \theta_t + \alpha_{\theta} \frac{\pi(a_t|s_t, \theta_t)}{\beta(a_t|s_t)} \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t) (q_t(s_t, a_t) - v_t(s_t))
+\]
+
+与同策略 (on-policy) 的情况相类似，优势函数可以被 TD 误差近似：
+\[
+q_t(s_t, a_t) - v_t(s_t) \approx r_{t+1} + \gamma v_t(s_{t+1}) - v_t(s_t) \doteq \delta_t(s_t, a_t)
+\]
+
+那么，算法就变成了：
+\[
+\theta_{t+1} = \theta_t + \alpha_{\theta} \frac{\pi(a_t|s_t, \theta_t)}{\beta(a_t|s_t)} \nabla_{\theta} \ln \pi(a_t|s_t, \theta_t) \delta_t(s_t, a_t)
+\]
+
+因此，
+\[
+\theta_{t+1} = \theta_t + \alpha_{\theta} \left( \frac{\delta_t(s_t, a_t)}{\beta(a_t|s_t)} \right) \nabla_{\theta} \pi(a_t|s_t, \theta_t)
+\]
+
+注意，这里的步长项 $\frac{\delta(s_t, a_t)}{\beta(a_t|s_t)}$ 只能保证利用 (exploitation)，因为其分母是固定的。
+
+\section{Deterministic Policy Gradient(DPG)}
+Deterministic Policies的优点：可以应用于动作是连续的情况。
+\subsubsection*{确定性策略的表示}
+\begin{itemize}
+    \item 现在，我们将确定性策略特别记作：
+    \[
+    a = \mu(s, \theta) \doteq \mu(s)
+    \]
+    \item $\mu$ 是一个从状态空间 $S$ 到动作空间 $A$ 的映射。
+    \item $\mu$ 可以由一个神经网络来表示，例如，输入为状态 $s$，输出为动作 $a$，其参数为 $\theta$。
+    \item 我们通常将 $\mu(s, \theta)$ 简写为 $\mu(s)$。
+\end{itemize}
+
+在折扣因子 $\gamma \in (0, 1)$ 的情况下，目标函数 $J(\theta)$ 的梯度是：
+\begin{align*}
+\nabla_{\theta} J(\theta) &= \sum_{s \in S} \rho_{\mu}(s) \nabla_{\theta} \mu(s) (\nabla_a q_{\mu}(s, a))|_{a=\mu(s)} \\
+&= \mathbb{E}_{S \sim \rho_{\mu}}[\nabla_{\theta} \mu(S) (\nabla_a q_{\mu}(S, a))|_{a=\mu(S)}]
+\end{align*}
+其中，$\rho_{\mu}$ 是一个状态分布。
+
+\subsubsection*{确定性策略的算法}
+基于策略梯度，用于最大化 $J(\theta)$ 的梯度上升算法是：
+\[
+\theta_{t+1} = \theta_t + \alpha_{\theta} \mathbb{E}_{S \sim \rho_{\mu}}[\nabla_{\theta} \mu(S)(\nabla_a q_{\mu}(S, a))|_{a=\mu(S)}]
+\]
+其对应的随机梯度上升算法是：
+\[
+\theta_{t+1} = \theta_t + \alpha_{\theta} \nabla_{\theta} \mu(s_t)(\nabla_a q_{\mu}(s_t, a))|_{a=\mu(s_t)}
+\]
+
+\subsubsection*{*伪代码 (Pseudocode)}
+\begin{framed}
+\noindent\textbf{确定性 Actor-Critic 算法}
+
+\vspace{1em} % 增加垂直间距
+
+\noindent\textbf{初始化 (Initialization):}
+一个给定的行为策略 $\beta(a|s)$。一个确定性的目标策略 $\mu(s, \theta_0)$，其中 $\theta_0$ 是初始参数向量。一个价值函数 $q(s,a,w_0)$，其中 $w_0$ 是初始参数向量。
+
+\noindent\textbf{目标 (Aim):}
+通过最大化 $J(\theta)$ 来寻找一个最优策略。
+
+\noindent\textbf{循环过程:}
+在每个 episode 的时间步 $t$，执行以下操作：
+\begin{itemize}
+    \item 遵循行为策略 $\beta$ 生成动作 $a_t$，然后观测到奖励 $r_{t+1}$ 和下一个状态 $s_{t+1}$。
+    \item \textcolor{blue}{TD 误差:}
+    \[ \delta_t = r_{t+1} + \gamma q(s_{t+1}, \mu(s_{t+1}, \theta_t), w_t) - q(s_t, a_t, w_t) \]
+    \item \textcolor{blue}{评论家 (Critic) 更新价值:}
+    \[ w_{t+1} = w_t + \alpha_w \delta_t \nabla_w q(s_t, a_t, w_t) \]
+    \item \textcolor{blue}{行动者 (Actor) 更新策略:}
+    \[ \theta_{t+1} = \theta_t + \alpha_{\theta} \nabla_{\theta} \mu(s_t, \theta_t)(\nabla_a q(s_t, a, w_{t+1}))|_{a=\mu(s_t)} \]
+\end{itemize}
+\end{framed}
+\end{document}
